@@ -1,0 +1,391 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie Rental</title>
+    <style>
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5; /* Light gray background */
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            color: #333;
+        }
+
+        h1 {
+            color: #1e90ff; /* Blue */
+            padding: 20px;
+            background-color: #fff;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #ff8c00; /* Orange */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            button:hover {
+                background-color: #ff6a00; /* Darker orange on hover */
+            }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+
+        .movie-card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px;
+            width: 280px;
+            display: inline-block;
+            vertical-align: top;
+            background-color: #fff; /* White background for each card */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Slight shadow */
+        }
+
+        .movie-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .movie-card h3 {
+            color: #1e90ff; /* Blue */
+            font-size: 1.25em;
+            margin: 0 0 10px 0;
+        }
+
+        .movie-card p {
+            font-size: 0.95em;
+            color: #555;
+            line-height: 1.4;
+            margin: 5px 0;
+        }
+
+            .movie-card p strong {
+                color: #ff8c00; /* Orange for labels */
+            }
+
+            .movie-card p:last-child {
+                text-align: center;
+            }
+
+        /* Container for movies */
+        #moviesContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+    </style>
+    <!-- jQuery for AJAX -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include your movies-db.js file -->
+    <script src="js/ajaxCalls.js"></script>
+    <script src="js/movies-db.js"></script>
+</head>
+<body>
+    <h1>Movie Rental System</h1>
+    <p id="userGreeting">Checking login status...</p>
+    <div class="action-buttons">
+        <button onclick="loadMovies()">Load Movies</button>
+        <button onclick="GoToAddMovies()">Create Movie</button>
+        <button onclick="goToMyMovies()">My Rented Movies</button>
+        <button onclick="goToEditProfile()">Edit Profile</button>
+        <button onclick="logout()">Log Out</button>
+        <button onclick="goToAdminPage()">Admin Panel</button>
+    </div>
+
+
+    <div>
+        <label for="filterTitle">Title:</label>
+        <input type="text" id="filterTitle" placeholder="Enter title" />
+
+        <label for="filterStartDate">Start Date:</label>
+        <input type="date" id="filterStartDate" />
+
+        <label for="filterEndDate">End Date:</label>
+        <input type="date" id="filterEndDate" />
+
+        <button onclick="filterByTitle()">Filter by Title</button>
+        <button onclick="filterByDate()">Filter by Date</button>
+        <button onclick="loadMovies()">Clear Filters</button>
+    </div>
+
+    <div id="moviesContainer"></div>
+
+    <script>
+        const baseUrl = "https://proj.ruppin.ac.il/cgroup19/test2/tar1";
+        let canAddMoviesToCart = false;
+
+        $(document).ready(function () {
+            checkLoggedInUser();
+        });
+
+        // Checks if a user is currently logged in
+        function checkLoggedInUser() {
+
+            const greetingLabel = document.getElementById("userGreeting");
+
+            try {
+                const userId = localStorage.getItem("userId");
+                console.log(userId);
+
+                const userJson = localStorage.getItem("user");
+                const user = userJson ? JSON.parse(userJson) : null;
+                greetingLabel.textContent = `Hello, ${user.name}!`;
+                canAddMoviesToCart = true;
+                console.log(user);
+            }
+
+            catch
+            {
+                greetingLabel.textContent = "Error, no user is currently logged in.";
+                canAddMoviesToCart = false;
+                return;
+            }
+
+        }
+
+        // Logs out the current user
+        function logout() {
+            if (!canAddMoviesToCart) {
+                alert("No user is currently logged in");
+                return;
+            }
+            localStorage.removeItem("user");
+            localStorage.removeItem("userId");
+
+            // Show a logout message
+            alert("You have logged out.");
+
+            // Redirect to login page
+            window.location.href = "UserLogin.html";
+        }
+
+        // Allows for the edit of the currently logged in user's profile
+        function goToEditProfile() {
+            const userId = localStorage.getItem("userId");
+            if (!userId) {
+                alert("You must be logged in to edit your profile.");
+                window.location.href = "UserLogin.html";
+                return;
+            }
+
+            window.location.href = "EditProfile.html";
+        }
+
+
+        // Loads all movies
+        function loadMovies() {
+            const container = document.getElementById('moviesContainer');
+            container.innerHTML = '';
+
+            ajaxCall("GET", `${baseUrl}/api/movies`, null,
+                function (movies) {
+                    movies.forEach(original => {
+                        // Map fields to match the Movie class
+                        const movie = {
+                            Id: original.id,
+                            Url: original.url,
+                            PrimaryTitle: original.primaryTitle,
+                            OriginalTitle: original.originalTitle,
+                            Type: original.type,
+                            Description: original.description,
+                            PrimaryImage: original.primaryImage,
+                            ContentRating: original.contentRating,
+                            StartYear: original.startYear,
+                            EndYear: original.endYear,
+                            ReleaseDate: new Date(original.releaseDate).toISOString(),
+                            Language: original.language,
+                            Interests: Array.isArray(original.interests) ? original.interests.join(', ') : original.interests,
+                            CountriesOfOrigin: original.countriesOfOrigin,
+                            ExternalLinks: original.externalLinks,
+                            SpokenLanguages: original.spokenLanguages,
+                            FilmingLocations: original.filmingLocations,
+                            Budget: original.budget,
+                            GrossWorldwide: original.grossWorldwide,
+                            Genres: Array.isArray(original.genres) ? original.genres.join(', ') : original.genres,
+                            IsAdult: original.isAdult,
+                            RuntimeMinutes: parseInt(original.runtimeMinutes) || 0,
+                            AverageRating: parseFloat(original.averageRating) || 0,
+                            NumVotes: original.numVotes,
+                            PriceToRent: original.priceToRent,
+                            RentalCount: original.rentalCount
+                        };
+
+                        const card = document.createElement('div');
+                        card.className = 'movie-card';
+                        card.innerHTML = `
+                            <h3>${movie.PrimaryTitle}</h3>
+                            <img class="movie-image" src="${movie.PrimaryImage}" alt="${movie.PrimaryTitle}">
+                            <p>${movie.Description}</p>
+                            <p><strong>Genres:</strong> ${movie.Genres}</p>
+                            <p><strong>Release Date:</strong> ${movie.ReleaseDate.split('T')[0]}</p>
+                            <p><strong>Rating:</strong> ${movie.AverageRating}</p>
+                            <button onclick='addToCart(${JSON.stringify(movie).replace(/'/g, "\\'")})'>Rent me</button>
+                        `;
+                        container.appendChild(card);
+                    });
+                },
+                function (xhr) {
+                    alert("Error loading movies: " + xhr.responseText);
+                }
+            );
+        }
+
+
+        // Goes to the create new movie page, assuming a user is logged in
+        function GoToAddMovies() {
+            if (!canAddMoviesToCart) {
+                alert("Error, a user must be logged in to create a new movie");
+                setTimeout(() => {
+                    window.location.href = `${baseUrl}/UserLogin.html`;
+                }, 3000);
+                return;
+            }
+            window.location.href = `${baseUrl}/AddMovies.html`;
+        }
+
+        // Rent a movie
+        //function addToCart(movie) {
+        //    const userId = localStorage.getItem("userId");
+
+        //    if (!userId) {
+        //        alert("You must be logged in to rent a movie.");
+        //        window.location.href = "UserLogin.html";
+        //        return;
+        //    }
+
+        //    const today = new Date();
+        //    const rentStart = today.toISOString().split("T")[0];
+        //    const rentEnd = new Date(today.setDate(today.getDate() + 5)).toISOString().split("T")[0]; // 5-day rental
+        //    const pricePerDay = movie.priceToRent || 20;
+        //    const totalPrice = pricePerDay * 5;
+
+        //    const rental = {
+        //        userId: parseInt(userId),
+        //        movieId: movie.Id,
+        //        rentStart: rentStart,
+        //        rentEnd: rentEnd,
+        //        totalPrice: totalPrice
+        //    };
+
+        //    console.log(rental);
+        //    console.log("Renting movie ID:", movie.Id);
+
+        //    ajaxCall("POST", `${baseUrl}/api/movies/rent`, JSON.stringify(rental),
+        //        function (data, textStatus, xhr) {
+        //            alert(`You successfully rented "${movie.PrimaryTitle}" for ₪${totalPrice}`);
+        //        },
+        //        function (xhr) {
+        //            if (xhr.status === 409) {
+        //                alert("This movie is already rented by you.");
+        //            } else {
+        //                alert("Error renting movie: " + xhr.responseText);
+        //            }
+        //        });
+        //}
+
+        function addToCart(movie) {
+            if (!canAddMoviesToCart) {
+                alert("You must be logged in to rent a movie.");
+                window.location.href = "UserLogin.html";
+                return;
+            }
+
+            // Store the movie object in localStorage
+            localStorage.setItem("movieToRent", JSON.stringify(movie));
+
+            // Redirect to rental form
+            window.location.href = "RentalForm.html";
+        }
+
+        // Filters available movies by title
+        function filterByTitle() {
+            const title = $("#filterTitle").val();
+            if (!title) {
+                alert("Please enter a title.");
+                return;
+            }
+
+            ajaxCall("GET", `${baseUrl}/api/movies/search?title=${encodeURIComponent(title)}`, null,
+                function (movies) {
+                    if (movies.length === 0) {
+                        alert("No movies found.");
+                    }
+                    displayMovies(movies);
+                },
+                function (xhr) {
+                    alert("Error filtering by title: " + xhr.responseText);
+                });
+        }
+        // Filters available movies by date
+        function filterByDate() {
+            const start = $("#filterStartDate").val();
+            const end = $("#filterEndDate").val();
+            if (!start || !end) {
+                alert("Please provide both dates.");
+                return;
+            }
+
+            ajaxCall("GET", `${baseUrl}/api/movies/from/${start}/until/${end}`, null,
+                function (movies) {
+                    if (movies.length === 0) {
+                        alert("No movies found.");
+                    }
+                    displayMovies(movies);
+                },
+                function (xhr) {
+                    alert("Error filtering by date: " + xhr.responseText);
+                });
+        }
+
+        // Displays all available movies
+        function displayMovies(movies) {
+            const container = document.getElementById("moviesContainer");
+            container.innerHTML = '';
+
+            movies.forEach(movie => {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.innerHTML = `
+                    <h3>${movie.primaryTitle}</h3>
+                    <img class="movie-image" src="${movie.primaryImage}" alt="${movie.primaryTitle}">
+                    <p>${movie.description}</p>
+                    <p><strong>Genres:</strong> ${movie.genres}</p>
+                    <p><strong>Release Date:</strong> ${movie.releaseDate?.split('T')[0]}</p>
+                    <p><strong>Rating:</strong> ${movie.averageRating}</p>
+                    <button onclick='addToCart(${JSON.stringify(movie).replace(/'/g, "\\'")})'>ADD TO CART</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function goToMyMovies() {
+            window.location.href = "MyMovies.html";
+        }
+
+        function goToAdminPage() {
+            window.location.href = "AdminPage.html";
+        }
+
+    </script>
+</body>
+</html>

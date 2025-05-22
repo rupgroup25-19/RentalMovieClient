@@ -1,0 +1,212 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5; /* Light gray background */
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            color: #333;
+        }
+
+        h1 {
+            color: #1e90ff; /* Blue */
+            padding: 20px;
+            background-color: #fff;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        /* Filters Section */
+        div {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 0 20px 20px 20px;
+        }
+
+        label {
+            margin-right: 10px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        input[type="text"], input[type="date"] {
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #ff8c00; /* Orange */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+            button:hover {
+                background-color: #ff6a00; /* Darker orange on hover */
+            }
+
+        /* Movie Card */
+        .movie-card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px;
+            width: 280px;
+            display: inline-block;
+            vertical-align: top;
+            background-color: #fff; /* White background for each card */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Slight shadow */
+        }
+
+            .movie-card h3 {
+                color: #1e90ff; /* Blue */
+                font-size: 1.25em;
+                margin: 0 0 10px 0;
+            }
+
+            .movie-card p {
+                font-size: 0.95em;
+                color: #555;
+                line-height: 1.4;
+                margin: 5px 0;
+            }
+
+                .movie-card p strong {
+                    color: #ff8c00; /* Orange for labels */
+                }
+
+        /* Container for movies */
+        #moviesContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <h1>Users login</h1>
+        <div class="loginForm">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email" required />
+        </div>
+        <div class="loginForm">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required />
+        </div>
+        <button onclick="loginUser()">Login</button>
+        <p id="errorMessage" class="error"></p>
+
+        <!-- Link to Registration Page -->
+        <div class="register-link">
+            <p>Don't have an account? <a href="signForm.html">Register here</a></p>
+        </div>
+    </div>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="js/ajaxCalls.js"></script>
+
+
+    <script>
+
+        const baseUrl = "https://proj.ruppin.ac.il/cgroup19/test2/tar1";
+        //let listOfUsers = [];
+        //// Function to load all users
+        //function loadUsers() {
+        //    const url = `${baseUrl}/api/Users`;  // Load all users
+
+        //    ajaxCall("GET", url, null,
+        //        function (users) {
+        //            if (users.length === 0) {
+        //                alert("No users found.");
+        //            }
+        //            else {
+        //                //for (var i = 0; i < users.length; i++)
+        //                //{
+        //                //    console.log(users);
+        //                //}
+        //                console.log(users);
+        //                listOfUsers = users;
+        //                console.log(listOfUsers);
+        //            }
+        //        },
+        //        function (xhr) {
+        //            alert("Error loading users: " + (xhr.responseJSON?.error || xhr.responseText));
+        //        }
+        //    );
+        //}
+
+        function loginUser() {
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const url = `${baseUrl}/api/Users/login`;
+
+            const loginData = {
+                email: email,
+                password: password
+            };
+
+            ajaxCall("POST", url, JSON.stringify(loginData),
+                function (user) {                   
+
+                    swal("Login successful!", `Welcome, ${user.name}`, "success");
+
+                    console.log(user.id);
+                    localStorage.setItem("userId", user.id);
+
+                    console.log(user);
+                    localStorage.setItem("user", JSON.stringify(user));
+                    
+
+                    console.log("User is now logged in on the server:", user);
+                    setTimeout(() => {
+                        window.location.href = `${baseUrl}/index.html`;
+                    }, 3000);
+                },
+                function (xhr) {
+                    swal("Login failed", xhr.responseJSON?.message || xhr.responseText, "error");
+                }
+            );
+        }
+        loadUsers();
+
+    </script>
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+l</a>

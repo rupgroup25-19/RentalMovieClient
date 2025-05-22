@@ -1,0 +1,228 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Movie</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- jQuery + Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <!-- SweetAlert -->
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <!-- Load movies DB -->
+    <script src="js/movies-db.js"></script>
+
+    <style>
+        .red-star {
+            color: red;
+        }
+
+        .container {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <form id="movieForm">
+            <h2>🎬 Insert A New Movie</h2>
+
+            <div class="form-group">
+                <label for="primaryTitle"><span class="red-star">★ </span>Title</label>
+                <input type="text" class="form-control" id="primaryTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label for="startYear"><span class="red-star">★ </span>Start Year</label>
+                <input type="number" class="form-control" id="startYear" min="1888" max="2025" placeholder="e.g. 1994" required>
+            </div>
+
+            <div class="form-group">
+                <label for="url"><span class="red-star">★ </span>Movie URL</label>
+                <input type="url" class="form-control" id="url"
+                       placeholder="https://example.com"
+                       pattern="^https://.*"
+                       oninvalid="this.setCustomValidity('URL must start with https://')"
+                       oninput="this.setCustomValidity('')"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="primaryImage"><span class="red-star">★ </span>Image URL</label>
+                <input type="url" class="form-control" id="primaryImage"
+                       placeholder="https://example.com/image.jpg"
+                       pattern="^https://.*\.(jpg|jpeg|png|gif|webp)$"
+                       oninvalid="this.setCustomValidity('Must start with https:// and end with a valid image extension')"
+                       oninput="this.setCustomValidity('')"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="description"><span class="red-star">★ </span>Description</label>
+                <textarea class="form-control" id="description" rows="3" placeholder="Enter movie description..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="releaseDate"><span class="red-star">★ </span>Release Date</label>
+                <input type="date" class="form-control" id="releaseDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="language"><span class="red-star">★ </span>Language</label>
+                <input type="text" class="form-control" id="language" list="languageOptions" required>
+                <datalist id="languageOptions"></datalist>
+            </div>
+
+            <div class="form-group">
+                <label for="budget"><span class="red-star">★ </span>Budget ($)</label>
+                <input type="number" class="form-control" id="budget" min="100000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="grossWorldwide">Gross Worldwide ($)</label>
+                <input type="number" class="form-control" id="grossWorldwide" min="0" value="0">
+            </div>
+
+            <div class="form-group">
+                <label for="genres"><span class="red-star">★ </span>Genres (select one)</label>
+                <select multiple class="form-control" id="genres" required>
+                    <option value="Action">Action</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Horror">Horror</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Thriller">Thriller</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="runtimeMinutes"><span class="red-star">★ </span>Runtime (minutes)</label>
+                <input type="number" class="form-control" id="runtimeMinutes" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="averageRating">Average Rating</label>
+                <input type="number" class="form-control" id="averageRating" step="0.1" min="0" max="10" value="0">
+            </div>
+
+            <div class="form-group">
+                <label for="numVotes">Number of Votes</label>
+                <input type="number" class="form-control" id="numVotes" min="0" value="0">
+            </div>
+
+            <div class="form-group">
+                <label for="isAdult">Is Adult?</label>
+                <select class="form-control" id="isAdult">
+                    <option value="false" selected>No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <script src="js/ajaxCalls.js"></script>
+    <script>
+        
+        const baseUrl = "https://proj.ruppin.ac.il/cgroup19/test2/tar1";
+
+        // יצירת מזהה ייחודי: tt1234567
+        function generateUniqueMovieId(existingMovies) {
+            let newId;
+            do {
+                const rand = Math.floor(1000000 + Math.random() * 9000000);
+                newId = "tt" + rand;
+            } while (existingMovies.some(m => m.id === newId));
+            return newId;
+        }
+
+        $(document).ready(function () {
+            // מילוי שפות
+            const languages = [...new Set(movies.map(m => m.language))];
+            languages.forEach(lang => {
+                $("#languageOptions").append(`<option value="${lang}">`);
+            });
+
+            //// שליפת כל הז'אנרים מהמוביס
+            //const allGenres = movies.flatMap(m => m.genres ? m.genres.split(',') : []);
+            //const uniqueGenres = [...new Set(allGenres.map(g => g.trim()))];
+            //const genreDatalist = $("#genreOptions");
+            //uniqueGenres.forEach(g => {
+            //    genreDatalist.append(`<option value="${g}">`);
+            //});
+            // מילוי ז'אנרים
+            const allGenres = movies.flatMap(m => m.genres);
+            const uniqueGenres = [...new Set(allGenres)];
+            uniqueGenres.forEach(g => {
+                $("#genreOptions").append(`<option value="${g}">`);
+            });
+
+
+            $("#movieForm").submit(async function (e) {
+                e.preventDefault();
+
+                const runtime = parseInt($("#runtimeMinutes").val());
+                if (isNaN(runtime) || runtime < 1) {
+                    swal("Error", "Runtime must be at least 1 minute", "error");
+                    return;
+                }
+
+                const movie = {
+                   /* Id: generateUniqueMovieId(movies), //  יצירת מזהה חדש*/
+                    PrimaryTitle: $("#primaryTitle").val(),
+                    StartYear: parseInt($("#startYear").val()),
+                    Url: $("#url").val(),
+                    PrimaryImage: $("#primaryImage").val(),
+                    Description: $("#description").val(),
+                    ReleaseDate: $("#releaseDate").val(),
+                    Language: $("#language").val(),
+                    Budget: parseFloat($("#budget").val()),
+                    GrossWorldwide: parseFloat($("#grossWorldwide").val()) || 0,
+                    Genres: Array.from($("#genres option:selected")).map(o => o.value).join(','),
+                    /*genres: $("#genres").val().trim(), // שמירה כמחרוזת אחת*/
+                    RuntimeMinutes: runtime,
+                    AverageRating: parseFloat($("#averageRating").val()),
+                    NumVotes: parseInt($("#numVotes").val()),
+                    IsAdult: $("#isAdult").val() === "true",
+
+                    OriginalTitle: "null",
+                    Type: "null",
+                    ContentRating: "null",
+                    EndYear: parseInt($("#startYear").val()),
+                    Interests: [null, null],
+                    CountriesOfOrigin: [null, null],
+                    ExternalLinks: [null, null],
+                    SpokenLanguages: [null, null],
+                    FilmingLocations: [null, null],
+
+                };
+                   
+                const url = `${baseUrl}/api/movies`;
+
+                ajaxCall("POST", url, JSON.stringify(movie),
+                    function (data, textStatus, xhr) {
+                        swal("Success!", "Movie added to cart.", "success");
+                        console.log("🚀 Sending movie:", movie);
+                        $("#movieForm")[0].reset(); // איפוס הטופס
+                    },
+                    function (xhr) {
+                        swal("Error", xhr.responseText || "Failed to add movie", "error");
+                    }
+                );
+            });
+        });
+    </script>
+
+</body>
+</html>

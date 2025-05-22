@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Rental Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        h1 {
+            color: #1e90ff;
+            margin-bottom: 20px;
+        }
+
+        .form-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            display: inline-block;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #0c70d4;
+            }
+
+        .nav-button {
+            background-color: #888;
+            margin-left: 10px;
+        }
+
+        .price-label {
+            font-size: 1.2em;
+            color: #ff8c00;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Confirm Movie Rental</h1>
+    <div class="form-container">
+        <p><strong>Movie:</strong> <span id="movieTitle"></span></p>
+
+        <label for="rentStart">Start Date:</label>
+        <input type="date" id="rentStart" required />
+
+        <label for="rentEnd">End Date:</label>
+        <input type="date" id="rentEnd" required />
+
+        <p class="price-label"><strong>Price Per Day:</strong> ₪<span id="pricePerDay">0</span></p>
+        <p class="price-label"><strong>Total Price:</strong> ₪<span id="totalPrice">0</span></p>
+
+        <button onclick="submitRental()">Confirm Rental</button>
+        <button class="nav-button" onclick="goToIndex()">Return to Home</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/ajaxCalls.js"></script>
+
+    <script>
+        const baseUrl = "https://proj.ruppin.ac.il/cgroup19/test2/tar1";
+        const movie = JSON.parse(localStorage.getItem("movieToRent"));
+        const userId = parseInt(localStorage.getItem("userId"));
+
+        if (!movie || !userId) {
+            alert("Movie or user not found. Please login and try again.");
+            window.location.href = "index.html";
+        }
+
+        document.getElementById("movieTitle").textContent = movie.primaryTitle || movie.PrimaryTitle;
+
+        const rentStartInput = document.getElementById("rentStart");
+        const rentEndInput = document.getElementById("rentEnd");
+        const pricePerDay = movie.priceToRent || movie.PriceToRent || 20;
+        document.getElementById("pricePerDay").textContent = pricePerDay;
+
+        rentStartInput.addEventListener("change", calculateTotalPrice);
+        rentEndInput.addEventListener("change", calculateTotalPrice);
+
+        function calculateTotalPrice() {
+            const start = new Date(rentStartInput.value);
+            const end = new Date(rentEndInput.value);
+
+            if (!isNaN(start) && !isNaN(end) && end > start) {
+                const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                const total = pricePerDay * days;
+                document.getElementById("totalPrice").textContent = total;
+                return total;
+            }
+
+            document.getElementById("totalPrice").textContent = "0";
+            return 0;
+        }
+
+        function submitRental() {
+            const rentStart = new Date(rentStartInput.value);
+            const rentEnd = new Date(rentEndInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (isNaN(rentStart) || isNaN(rentEnd)) {
+                alert("Please enter valid dates.");
+                return;
+            }
+
+            if (rentEnd <= rentStart) {
+                alert("End date must be after start date.");
+                return;
+            }
+
+            if (today < rentStart || today > rentEnd) {
+                alert("Today must be between the rental start and end dates.");
+                return;
+            }
+
+            const totalPrice = calculateTotalPrice();
+
+            if (totalPrice <= 0) {
+                alert("Invalid rental duration or price.");
+                return;
+            }
+
+            const rental = {
+                userId: userId,
+                movieId: movie.id || movie.Id,
+                rentStart: rentStartInput.value,
+                rentEnd: rentEndInput.value,
+                totalPrice: totalPrice
+            };
+
+            ajaxCall("POST", `${baseUrl}/api/movies/rent`, JSON.stringify(rental),
+                function () {
+                    alert("Movie rented successfully!");
+                    localStorage.removeItem("movieToRent");
+                    window.location.href = "MyMovies.html";
+                },
+                function (xhr) {
+                    alert("Error renting movie: " + (xhr.responseJSON?.error || xhr.responseText));
+                });
+        }
+
+        function goToIndex() {
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
+

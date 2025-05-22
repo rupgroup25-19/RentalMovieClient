@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5; /* Light gray background */
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            color: #333;
+        }
+
+        h1 {
+            color: #1e90ff; /* Blue */
+            padding: 20px;
+            background-color: #fff;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        /* Filters Section */
+        div {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin: 0 20px 20px 20px;
+        }
+
+        label {
+            margin-right: 10px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        input[type="text"], input[type="date"] {
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #ff8c00; /* Orange */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+            button:hover {
+                background-color: #ff6a00; /* Darker orange on hover */
+            }
+
+        .login-link {
+            margin-top: 20px;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+            .login-link a {
+                color: #1e90ff;
+                text-decoration: none;
+            }
+
+                .login-link a:hover {
+                    text-decoration: underline;
+                }
+
+
+        /* Movie Card */
+        .movie-card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px;
+            width: 280px;
+            display: inline-block;
+            vertical-align: top;
+            background-color: #fff; /* White background for each card */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Slight shadow */
+        }
+
+            .movie-card h3 {
+                color: #1e90ff; /* Blue */
+                font-size: 1.25em;
+                margin: 0 0 10px 0;
+            }
+
+            .movie-card p {
+                font-size: 0.95em;
+                color: #555;
+                line-height: 1.4;
+                margin: 5px 0;
+            }
+
+                .movie-card p strong {
+                    color: #ff8c00; /* Orange for labels */
+                }
+
+        /* Container for movies */
+        #moviesContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="js/ajaxCalls.js"></script>
+
+
+    <script>
+        const baseUrl = "https://proj.ruppin.ac.il/cgroup19/test2/tar1";
+
+        $(document).ready(function () {
+            alert("the page is reloading");
+            $("#signForm-container").submit(sendToServer);
+
+        })
+        function sendToServer() {
+            alert("In Send to Server");
+            const newUser = {
+                name: $("#name").val(),
+                email: $("#email").val(),
+                password: $("#password").val(),
+
+            }
+            console.log(newUser)
+            const url = `${baseUrl}/api/Users`;
+
+            // we will send to the server using ajax
+            /*ajaxCall("POST", url, JSON.stringify(newUser), SCB, ECB);*/
+
+            ajaxCall("POST", url, JSON.stringify(newUser),
+                function (data, textStatus, xhr) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        alert("New user added.");
+                    } else {
+                        alert("Error adding user: " + xhr.responseText);
+                    }
+                },
+                function (xhr) {
+                    alert("Error adding user: " + xhr.responseText);
+                }
+            );
+
+            return false;//שלא יתעדכן כל הדף סתם
+        }
+        //function SCB() {
+        //    alert(" the edd is ok ")
+        //}
+        //function ECB() {
+        //    alert("the edd is NOT ok")
+        //}
+    </script>
+
+
+</head>
+
+
+<body>
+
+    <div class="signForm-container">
+        <h1>New User Sign </h1>
+        <div class="signForm">
+            <label for="name">Name</label>
+            <input type="text" id="name" placeholder="Enter your name" required />
+        </div>
+
+        <div class="signForm">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email" required />
+        </div>
+
+        <div class="loginForm">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required />
+        </div>
+
+        <input type="submit" value="submit to the server" onclick="sendToServer()" />
+        <p id="errorMessage" class="error"></p>
+
+        <div class="login-link">
+            <p>Already have an account? <a href="UserLogin.html">Login here</a></p>
+        </div>
+
+
+    </div>
+</body>
+
+</html>
